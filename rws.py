@@ -115,9 +115,21 @@ class Rule(object):
         if isinstance(rulenode, MatchPoint):
             return bindings[rulenode.value]
         if isinstance(rulenode, Sequence):
-            return Sequence(bindings[rulenode.name], *flatten([self._eval_inner(bindings, child) for child in rulenode.children]))
+            if not isinstance(exnode, Group):
+                raise TypeError("Can't extrapolate Seq %r to non-group %r"%(rulenode, exnode))
+            start, length = bindings[rulenode.name]
+            res = Group(exnode.name, *exnode.children)
+            exchildren = exnode.children[start:start + len(rulenode.children)]
+            exchildren.extend([None] * (len(rulenode.children) - len(exchildren)))
+            res.children[start:start + length] = flatten([self._eval_inner(exchild, bindings, rulechild) for exchild, rulechild in zip(exchildren, rulenode.children)])
+            return res
         if isinstance(rulenode, Group):
-            return Group(rulenode.name, *flatten([self._eval_inner(bindings, child) for child in rulenode.children]))
+            if isinstance(exnode, Group):
+                exchildren = exnode.children[:len(rulenode.children)]
+            else:
+                exchildren = []
+            exchildren.extend([None] * (len(rulenode.children) - len(exchildren)))
+            return Group(rulenode.name, *flatten([self._eval_inner(exchild, bindings, child) for exchild, child in zip(exchildren, rulenode.children)]))
         return rulenode
 
     def execute(self, tree):
