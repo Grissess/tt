@@ -24,12 +24,13 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('string', MatchPoint('X'))), Sequence('s1', Group('Atom', MatchPoint('X')))),
     Rule(Sequence('s1', Group('oper', Atom('<')), Group('ident', MatchPoint('X')), Group('oper', Atom('>'))), Sequence('s1', Group('MatchPoint', MatchPoint('X')))),
     Rule(Sequence('s1', Group('oper', Atom('<')), Group('oper', Atom('>'))), Sequence('s1', Group('MatchPoint', Atom('')))),
-    # Children
-] + CHILD_RULES + [
     # Groups and Sequences
     Rule(Sequence('s1', Group('Atom', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('ident', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('MatchPoint', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
+    Rule(Sequence('s1', Group('oper', Atom('(')), Group('ident', MatchPoint('X')), Group('oper', Atom(')')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
+    # Children
+] + CHILD_RULES + [
     # Rules
     Rule(Sequence('s1', Group('Atom', MatchPoint('X')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Atom', MatchPoint('Y'))), Sequence('s1', Group('Rule', Group('Atom', MatchPoint('X')), Group('Atom', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('Atom', MatchPoint('X')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Group', MatchPoint('Y'), MatchPoint('Z'))), Sequence('s1', Group('Rule', Group('Atom', MatchPoint('X')), Group('Group', MatchPoint('Y'), MatchPoint('Z'))))),

@@ -7,6 +7,12 @@
 <s1>[oper['<'], ident[<x>], oper['>']] -> <s1>[MatchPoint[<x>]];
 <s1>[oper['<'], oper['>']] -> <s1>[MatchPoint['']];
 
+/* Groups and Sequences */
+<s1>[Atom[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
+<s1>[ident[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
+<s1>[MatchPoint[<x>], Children[<y>]] -> <s1>[Sequence[<x>, Children[<y>]]];
+<s1>[oper['('], ident[<x>], oper[')'], Children[<y>]] -> <s1>[Sequence[<x>, Children[<y>]]];
+
 /* Children (exhaustively) */
 /* initiators */
 <s1>[oper['['], Atom[<x>]] -> <s1>[Child[Atom[<x>]]];
@@ -25,11 +31,6 @@
 <s1>[Child[<a>, <b>], oper[','], MatchPoint[<x>]] -> <s1>[Child[Child[<a>, <b>], MatchPoint[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Group[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Group[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Sequence[<x>, <y>]]];
-
-/* Groups and Sequences */
-<s1>[Atom[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
-<s1>[ident[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
-<s1>[MatchPoint[<x>], Children[<y>]] -> <s1>[Sequence[<x>, Children[<y>]]];
 
 /* Rules */
 <s1>[Atom[<x>], oper['-'], oper['>'], Atom[<a>]] -> <s1>[Rule[Atom[<x>], Atom[<a>]]];

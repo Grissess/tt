@@ -7,7 +7,7 @@ import ctok
 import rws
 
 if len(sys.argv) < 2:
-    print('Usage:', sys.argv[0], 'ttfile.tt [ttrin] < input > out.tt', file=sys.stderr)
+    print('Usage:', sys.argv[0], 'ttfile.tt [ttrin] [debug] < input > out.tt', file=sys.stderr)
     exit(1)
 
 fp = open(sys.argv[1], 'r')
@@ -33,6 +33,8 @@ if len(sys.argv) > 2:
     in_toktree = ttr.Translator().translate(in_toktree)[0]
 print(rules, file=sys.stderr)
 print('Executing on input...', file=sys.stderr)
+if len(sys.argv) > 3:
+    rws.Rule.action = lambda self, rule, match, bind, res: print('Fired', rule, 'matching', match, 'bindings', bind, 'resulting in', res)
 out, iters = rules.run(in_toktree)
 print('...(took', iters, 'iterations)', file=sys.stderr)
 print(out)

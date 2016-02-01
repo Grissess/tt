@@ -100,6 +100,7 @@ class Rule(object):
                 res, subbind = self._match_inner(exnode.children[idx], child, bindings)
                 if not res:
                     return False, bindings
+                bindings.update(subbind)
             return True, bindings
         if isinstance(rulenode, Atom):
             if (not isinstance(exnode, Atom)) or exnode.value != rulenode.value:
@@ -107,10 +108,10 @@ class Rule(object):
             return True, bindings
         raise NotImplementedError('Cannot match %r'%(type(rulenode),))
 
-    def evaluate(self, bindings):
-        return self._eval_inner(bindings, self.rhs)
+    def evaluate(self, tree, bindings):
+        return self._eval_inner(tree, bindings, self.rhs)
 
-    def _eval_inner(self, bindings, rulenode):
+    def _eval_inner(self, exnode, bindings, rulenode):
         if isinstance(rulenode, MatchPoint):
             return bindings[rulenode.value]
         if isinstance(rulenode, Sequence):
@@ -123,7 +124,7 @@ class Rule(object):
         success, bindings = self.match(tree)
         if not success:
             return None
-        result = self.evaluate(bindings)
+        result = self.evaluate(tree, bindings)
         if self.action:
             new_result = self.action(self, tree, bindings, result)
             if new_result is not None:
@@ -133,6 +134,7 @@ class Rule(object):
 class RuleSet(object):
     def __init__(self, *rules):
         self.rules = rules
+        self.mode = self.pass_pre
 
     def __repr__(self):
         return '%s%r'%(type(self).__name__, self.rules)
@@ -155,11 +157,29 @@ class RuleSet(object):
                     return tree
         return None
 
+    def pass_post(self, tree):
+        if isinstance(tree, Group):
+            for idx, child in enumerate(tree.children):
+                result = self.pass_pre(child)
+                if result:
+                    tree.children[idx] = result
+                    return tree
+        for rule in self.rules:
+            result = rule.execute(tree)
+            if result:
+                verbose('Fired', rule, 'on', tree, 'giving', result)
+                if isinstance(result, Sequence) and isinstance(tree, Group):
+                    verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
+                    tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
+                    return tree
+                return result
+        return None
+
     def run(self, tree):
         iters = 0
         while True:
             verbose('Iter', iters, ':', tree)
-            newtree = self.pass_pre(tree)
+            newtree = self.mode(tree)
             if not newtree:
                 return tree, iters
             tree = newtree

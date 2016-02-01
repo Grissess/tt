@@ -1,3 +1,4 @@
 /* Test grammars go here */
 
 SubGroup[<a>, <b>] -> NotSubGroup[<b>, <a>, 'Atom'];
+EmbedGroup[<a>, (b)['1', '2']] -> EmbedGroup[<a>, (b)['1', '4']];
