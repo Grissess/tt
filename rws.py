@@ -1,5 +1,7 @@
 # rws -- Simple Rewrite System
 
+import re
+
 def flatten(it):
     res = []
     for item in it:
@@ -16,6 +18,8 @@ DEBUG=False
 def verbose(*args):
     if DEBUG:
         print(*args)
+
+IDENT = re.compile('[a-zA-Z_][a-zA-Z0-9_]*')
 
 class Expression(object):
     pass
@@ -36,7 +40,7 @@ class Group(Expression):
         self.children = list(children)
 
     def __repr__(self):
-        return self.name + repr(self.children)
+        return ('%s%r' if IDENT.match(self.name) else '%r%r')%(self.name, self.children)
 
     def pretty(self, level = 0):
         return '\n'.join(['  '*level + repr(self.name) + ':'] + [i.pretty(level + 1) for i in self.children])
@@ -46,14 +50,14 @@ class RuleEx(Expression):
 
 class Sequence(RuleEx, Group):
     def __repr__(self):
-        return '<%s>%r'%(self.name, self.children)
+        return '(%s)%r'%(self.name, self.children)
 
     def pretty(self, level = 0):
-        return '\n'.join(['  '*level + '<%s>:'%(self.name,)] + [i.pretty(level + 1) for i in self.children])
+        return '\n'.join(['  '*level + '(%s):'%(self.name,)] + [i.pretty(level + 1) for i in self.children])
 
 class MatchPoint(RuleEx, Atom):
     def __repr__(self):
-        return '<' + self.value + '>'
+        return '<%s>'%(self.value,)
 
 class Rule(object):
     action = None
