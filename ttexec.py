@@ -27,10 +27,11 @@ if len(exec_res) != 1 or not isinstance(exec_res[0], rws.RuleSet):
 rules = exec_res[0]
 print('Compiling input...', file=sys.stderr)
 
-
 in_toktree = ctok.Tokenizer(sys.stdin).tokenize()
 if len(sys.argv) > 2:
     in_toktree = ttr.RULES.run(in_toktree)[0]
+    in_toktree = ttr.Translator().translate(in_toktree)[0]
+print(rules, file=sys.stderr)
 print('Executing on input...', file=sys.stderr)
 out, iters = rules.run(in_toktree)
 print('...(took', iters, 'iterations)', file=sys.stderr)

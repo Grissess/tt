@@ -1,0 +1,3 @@
+/* Test grammars go here */
+
+SubGroup[<a>, <b>] -> NotSubGroup[<b>, <a>, 'Atom'];

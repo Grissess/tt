@@ -1,0 +1,4 @@
+/* Test inputs go here */
+/* Remember NOT to use -> or ; ! */
+
+OverGroup[Group['a', 'b'], SubGroup['x', 'y'], AnotherGroup['q', SubGroup['a', 'b']]]
