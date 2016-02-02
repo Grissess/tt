@@ -1,6 +1,5 @@
 /* Proof of TT's Turing Completeness -- this is a Turing Machine */
 /* See the *.tm files for valid input */
-/* NOT YET WORKING */
 
 /* Transition Rule */
 /* To the far left (stay): */
