@@ -161,7 +161,8 @@ RuleSets, Rules, and trees, you must remove the leading and trailing brackets
 If all went well (and after removing the leading and trailing brackets from
 `ttr3.tt`), there should be no difference between `ttr2.tt` and `ttr3.tt`:
 
-	$ diff ttr2.tt ttr3.tt && echo success success
+	$ diff ttr2.tt ttr3.tt && echo success
+	success
 
 ### Proof of Turing Completeness
 
