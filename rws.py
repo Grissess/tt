@@ -59,6 +59,14 @@ class MatchPoint(RuleEx, Atom):
     def __repr__(self):
         return '<%s>'%(self.value,)
 
+class Negator(RuleEx, Atom):
+    def __repr__(self):
+        return '!%r'%(self.value,)
+
+class Disjunctor(RuleEx, Group):
+    def __repr__(self):
+        return '|%r'%(self.children,)
+
 class Rule(object):
     action = None
     def __init__(self, lhs, rhs, action = None):
@@ -81,6 +89,9 @@ class Rule(object):
             verbose('IN MP: Binding', rulenode.value, 'to', exnode)
             bindings[rulenode.value] = exnode
             return True, bindings
+        if isinstance(rulenode, Negator):
+            res, subbind = self._match_inner(exnode, rulenode.value, bindings)
+            return not res, bindings
         if isinstance(rulenode, Sequence):
             if (not isinstance(exnode, Group)) or len(rulenode.children) > len(exnode.children):
                 return False, bindings
@@ -97,6 +108,14 @@ class Rule(object):
                     bindings[rulenode.name] = (exstart, len(rulenode.children))
                     return True, bindings
             return False, bindings
+        if isinstance(rulenode, Disjunctor):
+            old_bindings = bindings.copy()
+            for subrule in rulenode.children:
+                res, subbind = self._match_inner(exnode, subrule, bindings)
+                if res:
+                    bindings.update(subbind)
+                    return True, bindings
+            return False, bindings
         if isinstance(rulenode, Group):
             if (not isinstance(exnode, Group)) or exnode.name != rulenode.name or len(exnode.children) != len(rulenode.children):
                 return False, bindings
@@ -110,7 +129,7 @@ class Rule(object):
             if (not isinstance(exnode, Atom)) or exnode.value != rulenode.value:
                 return False, bindings
             return True, bindings
-        raise NotImplementedError('Cannot match %r'%(type(rulenode),))
+        raise NotImplementedError('Cannot match %r %r on %r'%(type(rulenode), rulenode, exnode))
 
     def evaluate(self, tree, bindings):
         return self._eval_inner(tree, bindings, self.rhs)

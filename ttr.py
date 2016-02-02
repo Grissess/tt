@@ -4,7 +4,7 @@ from rws import *
 
 # Rule.action = lambda self, rule, match, bind, res: print('Fired', rule, 'matching', match, 'bindings', bind, 'resulting in', res)
 
-ELEMS = {'Atom': 1, 'MatchPoint': 1, 'Group': 2, 'Sequence': 2}
+ELEMS = {'Atom': 1, 'MatchPoint': 1, 'Negator': 1, 'Disjunctor': 1, 'Group': 2, 'Sequence': 2}
 CHILD_RULES = []
 for et, eaffin in ELEMS.items():
     egrp = Group(et, *map(MatchPoint, map(str, range(eaffin))))
@@ -29,6 +29,14 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('ident', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('MatchPoint', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('oper', Atom('(')), Group('ident', MatchPoint('X')), Group('oper', Atom(')')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
+    # Disjunctors
+    Rule(Sequence('s1', Group('oper', Atom('|')), Group('Children', MatchPoint('X'))), Sequence('s1', Group('Disjunctor', Group('Children', MatchPoint('X'))))),
+    # Negations
+    Rule(Sequence('s1', Group('oper', Atom('!')), Group('Atom', MatchPoint('X'))), Sequence('s1', Group('Negator', Group('Atom', MatchPoint('X'))))),
+    Rule(Sequence('s1', Group('oper', Atom('!')), Group('MatchPoint', MatchPoint('X'))), Sequence('s1', Group('Negator', Group('MatchPoint', MatchPoint('X'))))),
+    Rule(Sequence('s1', Group('oper', Atom('!')), Group('Group', MatchPoint('X'), MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Group', MatchPoint('X'), MatchPoint('Y'))))),
+    Rule(Sequence('s1', Group('oper', Atom('!')), Group('Sequence', MatchPoint('X'), MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Sequence', MatchPoint('X'), MatchPoint('Y'))))),
+    Rule(Sequence('s1', Group('oper', Atom('!')), Group('Disjunctor', MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Disjunctor', MatchPoint('Y'))))),
     # Children
 ] + CHILD_RULES + [
     # Rules
@@ -89,11 +97,17 @@ class Translator(object):
     def tg_MatchPoint(self, obj):
         return MatchPoint(self.translate(obj.children[0]))
 
+    def tg_Negator(self, obj):
+        return Negator(self.translate(obj.children[0]))
+
     def tg_Group(self, obj):
         return Group(self.translate(obj.children[0]), *self.translate(obj.children[1]))
 
     def tg_Sequence(self, obj):
         return Sequence(self.translate(obj.children[0]), *self.translate(obj.children[1]))
+
+    def tg_Disjunctor(self, obj):
+        return Disjunctor(None, *self.translate(obj.children[0]))
 
 if __name__ == '__main__':
     import ctok, sys
