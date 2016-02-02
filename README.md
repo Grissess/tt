@@ -47,9 +47,9 @@ evaluated as part of a pattern tree against some subtree of the input tree:
   A Sequence will *splice* its children into the match of the original
   Sequence--that is, the bound location and length of the sequence will be
   replaced with the content of the rewriting sequence, which need not be the
-  same length. Sequences may be rewritten to a Group other than the one matched,
-  which causes the splice to occur in the same location in that Group as it would
-  in the matched Group.
+  same length. Sequences may be rewritten to a Group other than the one
+  matched, which causes the splice to occur in the same location in that Group
+  as it would in the matched Group.
 
 The exact behavior is determined by placement in a Rule: the left-hand side
 (first parameter) of a Rule is matched; its right-hand side (second parameter)
@@ -70,8 +70,8 @@ is invoked on the input file:
 * Strings with interpreted escape sequences (as in C), bounded with either
   double or single quotes, are converted to a Group of 'string' with a single
   Atom containing the (interpreted) string.
-* C-style identifiers are converted to a Group 'ident' with an analogous
-  single Atom.
+* C-style identifiers are converted to a Group 'ident' with an analogous single
+  Atom.
 * Positive decimal integers are converted to an analogous Group 'num'.
 
 All of these Groups are placed under a single Group 'document', and returned.
@@ -127,3 +127,70 @@ TT was designed to be a small language that is simultaneously:
 While polynomial-time algorithms trivially exist for subtree isomorphism with
 ordered children exist, this currently uses a slow method that could stand to
 be improved.
+
+### Bootstrapping and Quines
+
+The demonstration that TT is capable of compiling itself is possible to execute
+directly from the current state of the repository. However, since TT's
+computational model does not readily admit the convenient metaphors of IO that
+most modern machines implement, some conversion steps are required.
+Furthermore, due to the general inefficiency of the algorithm at present, this
+process takes me a couple minutes, and presumably can take even longer on slow
+hardware. Nonetheless, it is possible, and can be demonstrated as follows.
+
+The bootstrapping grammar is written in TT, executed in Python's RWS (arguably
+a virtual machine). A necessary preprocessing step to convert text to ordinary
+trees is done via `ctok`. After the grammar runs, a *TT tree* is generated,
+which is an *ordinary* tree that *represents* the structure of an arbitrary
+(possibly pattern) tree. Translating from a TT tree to a plain tree is done by
+the `ttr.Translator`, which is invoked on option from `ttexec`.
+
+The self-encoded grammar is in `ttr.tt`. To execute it using the `ttexec`
+helper, use it as such:
+
+	$ python3 ttexec.py ttr.tt -u < ttr.tt > ttr2.tt
+
+This will generate the Stage 2 compiler `ttr2.tt`, which can be tested for
+correspondence with `ttr.tt`; however, it's easier to verify it against a Stage
+3 build. First, however, because a document can consist of an arbitrary list of
+RuleSets, Rules, and trees, you must remove the leading and trailing brackets
+`[]` from ttr2.tt; then:
+
+	$ python3 ttexec.py ttr2.tt -u < ttr2.tt > ttr3.tt
+
+If all went well (and after removing the leading and trailing brackets from
+`ttr3.tt`), there should be no difference between `ttr2.tt` and `ttr3.tt`:
+
+	$ diff ttr2.tt ttr3.tt && echo success success
+
+### Proof of Turing Completeness
+
+TT is Turing Complete; in fact, it can completely emulate a Turing machine. The
+program `turma.tt` is a Turing Machine executor, that expects a tree describing
+a machine description consisting of:
+
+* A group named TuringMachine, with the exact children:
+  * Group State, with a single Atom child, representing the state.
+  * Group Tape, bounded on the left with 'LMARK', on the right with 'RMARK',
+	and with empty cells denoted 'EMPTY', along with any other ordinary
+	Elements representing tape symbols, with exactly one child (not 'LMARK' or
+	'RMARK') being the only child of a group Head.
+  * Group Transitions, with an arbitrary number of Transition groups, each
+	consisting of the ordered children:
+	* The Atom in the current State.
+	* The symbol in the current Head.
+	* An atom 'LEFT' or 'RIGHT' representing the direction of move to take.
+	* A symbol to replace the current Head's position with.
+	* An Atom to make the new State.
+
+An example of such a file is given in `streq.tm`, a Turing Machine which
+determines if two bitstrings (separated by a 'SEP') are equal. In the current
+implementation, it passes to the 'ACCEPT' state in 66 iterations. Executing the
+machine is done as follows:
+
+	$ python3 ttexec.py turma.tt -t < streq.tm
+
+The additional -t option indicates that the input file is to be interpreted as
+a TT file, not an arbitrary file to be tokenized. Using the above grammar for
+TT files, it's possible to construct ordinary trees for such input by avoiding
+use of the symbols `->` and `;`.

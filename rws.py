@@ -172,7 +172,9 @@ class RuleSet(object):
         self.mode = self.pass_pre
 
     def __repr__(self):
-        return '%s%r'%(type(self).__name__, self.rules)
+        if not self.rules:
+            return '<empty RuleSet>'
+        return '; '.join(map(repr, self.rules)) + ';'
 
     def pass_pre(self, tree):
         for rule in self.rules:
