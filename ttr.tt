@@ -59,3 +59,4 @@
 <s1>[Rule[<x>, <y>], oper[';']] -> <s1>[RuleSet[Rules[Rule[<x>, <y>]]]];
 <s1>[RuleSet[Rules[<a>]], Rule[<x>, <y>], oper[';']] -> <s1>[RuleSet[Rules[<a>, Rule[<x>, <y>]]]];
 <s1>[RuleSet[Rules[<a>, <b>]], Rule[<x>, <y>], oper[';']] -> <s1>[RuleSet[Rules[Rules[<a>, <b>], Rule[<x>, <y>]]]];
+<s1>[RuleSet[<x>], RuleSet[<y>]] -> <s1>[RuleSet[Rules[<x>, <y>]]];

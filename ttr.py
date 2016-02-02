@@ -110,10 +110,13 @@ class Translator(object):
         return Disjunctor(None, *self.translate(obj.children[0]))
 
 if __name__ == '__main__':
-    import ctok, sys
+    import ctok, sys, pickle
     tree = ctok.Tokenizer(sys.stdin).tokenize()
-    print(tree.pretty())
+    print('Compiling...', file=sys.stderr)
     res = RULES.run(tree)
-    print('Iterations:', res[1])
-    print(res[0].pretty())
-    print(Translator().translate(res[0]))
+    print('Iterations:', res[1], file=sys.stderr)
+    print(res[0].pretty(), file=sys.stderr)
+    tree = Translator().translate(res[0])
+    print(tree, file=sys.stderr)
+    sys.stdout.buffer.write(pickle.dumps(tree))
+    sys.stdout.flush()
