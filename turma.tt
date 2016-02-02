@@ -4,9 +4,9 @@
 
 /* Transition Rule */
 /* To the far left (stay): */
-TuringMachine[State[<s>], <tape>['LMARK', Head[<current>]], <transitions>[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]] -> TuringMachine[State[<ns>], <tape>['LMARK', Head[<new>]], <transitions>[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]];
+TuringMachine[State[<s>], (tape)['LMARK', Head[<current>]], (transitions)[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]] -> TuringMachine[State[<ns>], (tape)['LMARK', Head[<new>]], (transitions)[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]];
 /* To the far right (acquire more memory): */
-TuringMachine[State[<s>], <tape>[Head[<current>], 'RMARK'], <transitions>[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]] -> TuringMachine[State[<ns>], <tape>[<new>, Head['EMPTY'], 'RMARK'], <transitions>[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]];
+TuringMachine[State[<s>], (tape)[Head[<current>], 'RMARK'], (transitions)[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]] -> TuringMachine[State[<ns>], (tape)[<new>, Head['EMPTY'], 'RMARK'], (transitions)[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]];
 /* In general: */
-TuringMachine[State[<s>, <x>], <tape>[<left>, Head[<current>]], <transitions>[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]] -> TuringMachine[State[<ns>], <tape>[Head[<left>], <new>], <transitions>[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]];
-TuringMachine[State[<s>], <tape>[Head[<current>], <right>], <transitions>[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]] -> TuringMachine[State[<ns>], <tape>[<new>, Head[<right>]], <transitions>[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]];
+TuringMachine[State[<s>], (tape)[<left>, Head[<current>]], (transitions)[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]] -> TuringMachine[State[<ns>], (tape)[Head[<left>], <new>], (transitions)[Transition[<s>, <current>, 'LEFT', <new>, <ns>]]];
+TuringMachine[State[<s>], (tape)[Head[<current>], <right>], (transitions)[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]] -> TuringMachine[State[<ns>], (tape)[<new>, Head[<right>]], (transitions)[Transition[<s>, <current>, 'RIGHT', <new>, <ns>]]];

@@ -34,7 +34,7 @@ if len(sys.argv) > 2:
 print(rules, file=sys.stderr)
 print('Executing on input...', file=sys.stderr)
 if len(sys.argv) > 3:
-    rws.Rule.action = lambda self, rule, match, bind, res: print('Fired', rule, 'matching', match, 'bindings', bind, 'resulting in', res)
+    rws.Rule.action = lambda self, rule, match, bind, res: print('Fired:', rule, '\nMatching:', match, '\nBindings:', bind, '\nResulting in', res, '\n---\n')
 out, iters = rules.run(in_toktree)
 print('...(took', iters, 'iterations)', file=sys.stderr)
 print(out)
