@@ -1,4 +1,3 @@
 /* Test grammars go here */
 
-SubGroup[<a>, <b>] -> NotSubGroup[<b>, <a>, 'Atom'];
-EmbedGroup[<a>, (b)['1', '2']] -> EmbedGroup[<a>, (b)['1', '4']];
+(s1)[&[<groupwithembedding>, (sgroup)['HasEmbedding']], &[<x>, !<groupwithembedding>]] -> (s1)[<groupwithembedding>, <groupwithembedding>];

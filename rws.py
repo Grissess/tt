@@ -67,6 +67,10 @@ class Disjunctor(RuleEx, Group):
     def __repr__(self):
         return '|%r'%(self.children,)
 
+class Conjunctor(RuleEx, Group):
+    def __repr__(self):
+        return '&%r'%(self.children,)
+
 class Rule(object):
     action = None
     def __init__(self, lhs, rhs, action = None):
@@ -116,6 +120,15 @@ class Rule(object):
                     bindings.update(subbind)
                     return True, bindings
             return False, bindings
+        if isinstance(rulenode, Conjunctor):
+            new_bindings = bindings.copy()
+            for subrule in rulenode.children:
+                res, subbind = self._match_inner(exnode, subrule, new_bindings)
+                if not res:
+                    return False, bindings
+                new_bindings.update(subbind)
+            bindings.update(new_bindings)
+            return True, bindings
         if isinstance(rulenode, Group):
             if (not isinstance(exnode, Group)) or exnode.name != rulenode.name or len(exnode.children) != len(rulenode.children):
                 return False, bindings
