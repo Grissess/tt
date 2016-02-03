@@ -90,6 +90,8 @@ The translation rules in `ttr` (both versions) implement the following CFG:
   element.
 * A vertical bar `|` preceding a comma-separated list in brackets gives a
   Disjunctor over that set of elements.
+* An ampersand `&` preceding a comma-separated list in brackets gives a
+  Conjunctor over that set of elements
 * An Element is any aforementioned Atom, Group, MatchPoint, Sequence, Negator,
   or Disjunctor.
 * An arrow `->` between two (compatible) Elements creates a Rule. Compatible
