@@ -118,6 +118,9 @@ if __name__ == '__main__':
     import ctok, sys, pickle
     tree = ctok.Tokenizer(sys.stdin).tokenize()
     print('Compiling...', file=sys.stderr)
+    if len(sys.argv) > 1:
+        print('(verbose enabled)', file=sys.stderr)
+        Rule.action = lambda self, rule, match, bind, res: print('Fired:', rule, '\nMatching:', match, '\nBindings:', bind, '\nResulting in', res, '\n---\n', file=sys.stderr)
     res = RULES.run(tree)
     print('Iterations:', res[1], file=sys.stderr)
     print(res[0].pretty(), file=sys.stderr)

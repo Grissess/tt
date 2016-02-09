@@ -189,7 +189,7 @@ class RuleSet(object):
             return '<empty RuleSet>'
         return '; '.join(map(repr, self.rules)) + ';'
 
-    def pass_pre(self, tree):
+    def pass_one(self, tree):
         for rule in self.rules:
             result = rule.execute(tree)
             if result:
@@ -197,23 +197,11 @@ class RuleSet(object):
                 if isinstance(result, Sequence) and isinstance(tree, Group):
                     verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
                     tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
-                    return tree
-                return result
-        if isinstance(tree, Group):
-            for idx, child in enumerate(tree.children):
-                result = self.pass_pre(child)
-                if result:
-                    tree.children[idx] = result
-                    return tree
+                    return tree, 0
+                return result, 0
         return None
 
-    def pass_post(self, tree):
-        if isinstance(tree, Group):
-            for idx, child in enumerate(tree.children):
-                result = self.pass_pre(child)
-                if result:
-                    tree.children[idx] = result
-                    return tree
+    def pass_pre(self, tree, level=0):
         for rule in self.rules:
             result = rule.execute(tree)
             if result:
@@ -221,19 +209,43 @@ class RuleSet(object):
                 if isinstance(result, Sequence) and isinstance(tree, Group):
                     verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
                     tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
-                    return tree
-                return result
+                    return tree, level
+                return result, level
+        if isinstance(tree, Group):
+            for idx, child in enumerate(tree.children):
+                result = self.pass_pre(child, level+1)
+                if result:
+                    tree.children[idx] = result[0]
+                    return result
+        return None
+
+    def pass_post(self, tree, level=0):
+        if isinstance(tree, Group):
+            for idx, child in enumerate(tree.children):
+                result = self.pass_pre(child, level)
+                if result:
+                    tree.children[idx] = result[0]
+                    return result
+        for rule in self.rules:
+            result = rule.execute(tree)
+            if result:
+                verbose('Fired', rule, 'on', tree, 'giving', result)
+                if isinstance(result, Sequence) and isinstance(tree, Group):
+                    verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
+                    tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
+                    return tree, level
+                return result, level
         return None
 
     def run(self, tree):
-        iters = 0
+        iters = {}
         while True:
             verbose('Iter', iters, ':', tree)
             newtree = self.mode(tree)
             if not newtree:
                 return tree, iters
-            tree = newtree
-            iters += 1
+            tree = newtree[0]
+            iters[newtree[1]] = iters.get(newtree[1], 0) + 1
 
 if __name__ == '__main__':
     rules = RuleSet(
