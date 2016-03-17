@@ -86,33 +86,43 @@ class Rule(object):
         return self._match_inner(ex, self.lhs, {})
 
     def _match_inner(self, exnode, rulenode, bindings):
-        if isinstance(rulenode, MatchPoint):
-            if rulenode.value in bindings:
-                verbose('IN MP: Verifying', exnode, 'against binding', bindings[rulenode.value])
-                return self._match_inner(exnode, bindings[rulenode.value], bindings)
-            verbose('IN MP: Binding', rulenode.value, 'to', exnode)
-            bindings[rulenode.value] = exnode
+        if rulenode.__class__ is Atom:
+            if (exnode.__class__ is not Atom) or exnode.value != rulenode.value:
+                return False, bindings
             return True, bindings
-        if isinstance(rulenode, Negator):
-            res, subbind = self._match_inner(exnode, rulenode.value, bindings)
-            return not res, bindings
-        if isinstance(rulenode, Sequence):
-            if (not isinstance(exnode, Group)) or len(rulenode.children) > len(exnode.children):
+        if rulenode.__class__ is Group:
+            if (exnode.__class__ is not Group) or exnode.name != rulenode.name or len(exnode.children) != len(rulenode.children):
+                return False, bindings
+            for idx, child in enumerate(rulenode.children):
+                res, subbind = self._match_inner(exnode.children[idx], child, bindings)
+                if not res:
+                    return False, bindings
+                bindings.update(subbind)
+            return True, bindings
+        if rulenode.__class__ is Sequence:
+            if (exnode.__class__ is not Group) or len(rulenode.children) > len(exnode.children):
                 return False, bindings
             old_bindings = bindings.copy()
-            for exstart in range(len(exnode.children) - len(rulenode.children) + 1):
+            limit = len(exnode.children) - len(rulenode.children) + 1
+            for exstart in range(limit):
                 bindings = old_bindings.copy()
-                verbose('IN SEQ: Match', rulenode, 'against', exnode.children[exstart:exstart+len(rulenode.children)])
                 for idx, child in enumerate(rulenode.children):
                     res, subbind = self._match_inner(exnode.children[exstart + idx], child, bindings)
                     if not res:
-                        verbose('IN SEQ: No match')
                         break
                 else:
                     bindings[rulenode.name] = (exstart, len(rulenode.children))
                     return True, bindings
             return False, bindings
-        if isinstance(rulenode, Disjunctor):
+        if rulenode.__class__ is MatchPoint:
+            if rulenode.value in bindings:
+                return self._match_inner(exnode, bindings[rulenode.value], bindings)
+            bindings[rulenode.value] = exnode
+            return True, bindings
+        if rulenode.__class__ is Negator:
+            res, subbind = self._match_inner(exnode, rulenode.value, bindings)
+            return not res, bindings
+        if rulenode.__class__ is Disjunctor:
             old_bindings = bindings.copy()
             for subrule in rulenode.children:
                 res, subbind = self._match_inner(exnode, subrule, bindings)
@@ -120,7 +130,7 @@ class Rule(object):
                     bindings.update(subbind)
                     return True, bindings
             return False, bindings
-        if isinstance(rulenode, Conjunctor):
+        if rulenode.__class__ is Conjunctor:
             new_bindings = bindings.copy()
             for subrule in rulenode.children:
                 res, subbind = self._match_inner(exnode, subrule, new_bindings)
@@ -129,29 +139,16 @@ class Rule(object):
                 new_bindings.update(subbind)
             bindings.update(new_bindings)
             return True, bindings
-        if isinstance(rulenode, Group):
-            if (not isinstance(exnode, Group)) or exnode.name != rulenode.name or len(exnode.children) != len(rulenode.children):
-                return False, bindings
-            for idx, child in enumerate(rulenode.children):
-                res, subbind = self._match_inner(exnode.children[idx], child, bindings)
-                if not res:
-                    return False, bindings
-                bindings.update(subbind)
-            return True, bindings
-        if isinstance(rulenode, Atom):
-            if (not isinstance(exnode, Atom)) or exnode.value != rulenode.value:
-                return False, bindings
-            return True, bindings
         raise NotImplementedError('Cannot match %r %r on %r'%(type(rulenode), rulenode, exnode))
 
     def evaluate(self, tree, bindings):
         return self._eval_inner(tree, bindings, self.rhs)
 
     def _eval_inner(self, exnode, bindings, rulenode):
-        if isinstance(rulenode, MatchPoint):
+        if rulenode.__class__ is MatchPoint:
             return bindings[rulenode.value]
-        if isinstance(rulenode, Sequence):
-            if not isinstance(exnode, Group):
+        if rulenode.__class__ is Sequence:
+            if exnode.__class__ is not Group:
                 raise TypeError("Can't extrapolate Seq %r to non-group %r"%(rulenode, exnode))
             start, length = bindings[rulenode.name]
             res = Group(exnode.name, *exnode.children)
@@ -159,8 +156,8 @@ class Rule(object):
             exchildren.extend([None] * (len(rulenode.children) - len(exchildren)))
             res.children[start:start + length] = flatten([self._eval_inner(exchild, bindings, rulechild) for exchild, rulechild in zip(exchildren, rulenode.children)])
             return res
-        if isinstance(rulenode, Group):
-            if isinstance(exnode, Group):
+        if rulenode.__class__ is Group:
+            if exnode.__class__ is Group:
                 exchildren = exnode.children[:len(rulenode.children)]
             else:
                 exchildren = []
@@ -193,9 +190,7 @@ class RuleSet(object):
         for rule in self.rules:
             result = rule.execute(tree)
             if result:
-                verbose('Fired', rule, 'on', tree, 'giving', result)
-                if isinstance(result, Sequence) and isinstance(tree, Group):
-                    verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
+                if result.__class__ is Sequence and tree.__class__ is Group:
                     tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
                     return tree, 0
                 return result, 0
@@ -205,13 +200,11 @@ class RuleSet(object):
         for rule in self.rules:
             result = rule.execute(tree)
             if result:
-                verbose('Fired', rule, 'on', tree, 'giving', result)
-                if isinstance(result, Sequence) and isinstance(tree, Group):
-                    verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
+                if result.__class__ is Sequence and tree.__class__ is Group:
                     tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
                     return tree, level
                 return result, level
-        if isinstance(tree, Group):
+        if tree.__class__ is Group:
             for idx, child in enumerate(tree.children):
                 result = self.pass_pre(child, level+1)
                 if result:
@@ -220,7 +213,7 @@ class RuleSet(object):
         return None
 
     def pass_post(self, tree, level=0):
-        if isinstance(tree, Group):
+        if tree.__class__ is Group:
             for idx, child in enumerate(tree.children):
                 result = self.pass_pre(child, level)
                 if result:
@@ -229,9 +222,7 @@ class RuleSet(object):
         for rule in self.rules:
             result = rule.execute(tree)
             if result:
-                verbose('Fired', rule, 'on', tree, 'giving', result)
-                if isinstance(result, Sequence) and isinstance(tree, Group):
-                    verbose('IN SEQ: Splicing', result.children, 'into', tree.children, 'at index', result.name)
+                if result.__class__ is Sequence and tree.__class__ is Group:
                     tree.children[result.name[0]:result.name[0]+result.name[1]] = result.children
                     return tree, level
                 return result, level
@@ -240,7 +231,6 @@ class RuleSet(object):
     def run(self, tree):
         iters = {}
         while True:
-            verbose('Iter', iters, ':', tree)
             newtree = self.mode(tree)
             if not newtree:
                 return tree, iters
