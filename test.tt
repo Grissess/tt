@@ -1,3 +1,4 @@
 /* Test grammars go here */
 
-(s1)[&[<groupwithembedding>, (sgroup)['HasEmbedding']], &[<x>, !<groupwithembedding>]] -> (s1)[<groupwithembedding>, <groupwithembedding>];
+(s0)[{s1}['a', 'd', 'c', !'e']] -> (s0)[{s1}['q', 'r', 's', 'e']];
+(s0)[{s1}['q', 'r', 's', !'f', !'g']] -> (s0)[{s1}['q', 'r', 's', 'f', 'g']];

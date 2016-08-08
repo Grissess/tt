@@ -1,0 +1,4 @@
+System[WM[
+	Equiv[Func['f', Args['a']], 'a'],
+	Equiv[Func['g', Args['b']], 'a']
+], L['f']]

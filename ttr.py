@@ -4,7 +4,7 @@ from rws import *
 
 # Rule.action = lambda self, rule, match, bind, res: print('Fired', rule, 'matching', match, 'bindings', bind, 'resulting in', res)
 
-ELEMS = {'Atom': 1, 'MatchPoint': 1, 'Negator': 1, 'Disjunctor': 1, 'Conjunctor': 1, 'Group': 2, 'Sequence': 2}
+ELEMS = {'Atom': 1, 'MatchPoint': 1, 'Negator': 1, 'Disjunctor': 1, 'Conjunctor': 1, 'Group': 2, 'Sequence': 2, 'Set': 2}
 CHILD_RULES = []
 for et, eaffin in ELEMS.items():
     egrp = Group(et, *map(MatchPoint, map(str, range(eaffin))))
@@ -29,6 +29,7 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('ident', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('MatchPoint', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('oper', Atom('(')), Group('ident', MatchPoint('X')), Group('oper', Atom(')')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Sequence', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
+    Rule(Sequence('s1', Group('oper', Atom('{')), Group('ident', MatchPoint('X')), Group('oper', Atom('}')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Set', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     # Disjunctors and Conjunctors
     Rule(Sequence('s1', Group('oper', Atom('|')), Group('Children', MatchPoint('X'))), Sequence('s1', Group('Disjunctor', Group('Children', MatchPoint('X'))))),
     Rule(Sequence('s1', Group('oper', Atom('&')), Group('Children', MatchPoint('X'))), Sequence('s1', Group('Conjunctor', Group('Children', MatchPoint('X'))))),
@@ -47,6 +48,7 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('Group', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Atom', MatchPoint('Z'))), Sequence('s1', Group('Rule', Group('Group', MatchPoint('X'), MatchPoint('Y')), Group('Atom', MatchPoint('Z'))))),
     Rule(Sequence('s1', Group('Group', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Group', MatchPoint('Z'), MatchPoint('W'))), Sequence('s1', Group('Rule', Group('Group', MatchPoint('X'), MatchPoint('Y')), Group('Group', MatchPoint('Z'), MatchPoint('W'))))),
     Rule(Sequence('s1', Group('Sequence', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Sequence', MatchPoint('Z'), MatchPoint('W'))), Sequence('s1', Group('Rule', Group('Sequence', MatchPoint('X'), MatchPoint('Y')), Group('Sequence', MatchPoint('Z'), MatchPoint('W'))))),
+    Rule(Sequence('s1', Group('Set', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom('-')), Group('oper', Atom('>')), Group('Set', MatchPoint('Z'), MatchPoint('W'))), Sequence('s1', Group('Rule', Group('Set', MatchPoint('X'), MatchPoint('Y')), Group('Set', MatchPoint('Z'), MatchPoint('W'))))),
     # Ruleset
     Rule(Sequence('s1', Group('Rule', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom(';'))), Sequence('s1', Group('RuleSet', Group('Rules', Group('Rule', MatchPoint('X'), MatchPoint('Y')))))),
     Rule(Sequence('s1', Group('RuleSet', MatchPoint('X')), Group('Rule', MatchPoint('Y'), MatchPoint('Z')), Group('oper', Atom(';'))), Sequence('s1', Group('RuleSet', Group('Rules', MatchPoint('X'), Group('Rule', MatchPoint('Y'), MatchPoint('Z')))))),
@@ -107,6 +109,9 @@ class Translator(object):
 
     def tg_Sequence(self, obj):
         return Sequence(self.translate(obj.children[0]), *self.translate(obj.children[1]))
+
+    def tg_Set(self, obj):
+        return Set(self.translate(obj.children[0]), *self.translate(obj.children[1]))
 
     def tg_Disjunctor(self, obj):
         return Disjunctor(None, *self.translate(obj.children[0]))

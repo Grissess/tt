@@ -1,0 +1,9 @@
+(g)[{s}[
+	Equiv[Func['f', Args[<fa>]], <fa>],
+	Equiv[Func['g', Args[<ga>]], <fa>],
+	!Equiv[Func['g', Args[<ga>]], Func['f', Args[<fa>]]]
+]] -> (g)[{s}[
+	Equiv[Func['f', Args[<fa>]], <fa>],
+	Equiv[Func['g', Args[<ga>]], <fa>],
+	Equiv[Func['g', Args[<ga>]], Func['f', Args[<fa>]]]
+]];

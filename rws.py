@@ -55,6 +55,13 @@ class Sequence(RuleEx, Group):
     def pretty(self, level = 0):
         return '\n'.join(['  '*level + '(%s):'%(self.name,)] + [i.pretty(level + 1) for i in self.children])
 
+class Set(RuleEx, Group):
+    def __repr__(self):
+        return '{%s}%r'%(self.name, self.children)
+
+    def pretty(self, level = 0):
+        return '\n'.join(['  '*level + '{%s}:'%(self.name,)] + [i.pretty(level + 1) for i in self.children])
+
 class MatchPoint(RuleEx, Atom):
     def __repr__(self):
         return '<%s>'%(self.value,)
@@ -114,6 +121,31 @@ class Rule(object):
                     bindings[rulenode.name] = (exstart, len(rulenode.children))
                     return True, bindings
             return False, bindings
+        if rulenode.__class__ is Set:
+            if exnode.__class__ is not Group:
+                return False, bindings
+            old_bindings = bindings.copy()
+            mpoint = []
+            for child in rulenode.children:
+                if child.__class__ is Negator:
+                    for exchild in exnode.children:
+                        res, subbind = self._match_inner(exchild, child.value, bindings)
+                        if res:
+                            return False, old_bindings
+                        bindings = subbind
+                    else:
+                        mpoint.append(None)
+                else:
+                    for exidx, exchild in enumerate(exnode.children):
+                        res, subbind = self._match_inner(exchild, child, bindings)
+                        if res:
+                            bindings = subbind
+                            mpoint.append(exidx)
+                            break
+                    else:
+                        return False, old_bindings
+            bindings[rulenode.name] = mpoint
+            return True, bindings
         if rulenode.__class__ is MatchPoint:
             if rulenode.value in bindings:
                 return self._match_inner(exnode, bindings[rulenode.value], bindings)
@@ -156,6 +188,16 @@ class Rule(object):
             exchildren.extend([None] * (len(rulenode.children) - len(exchildren)))
             res.children[start:start + length] = flatten([self._eval_inner(exchild, bindings, rulechild) for exchild, rulechild in zip(exchildren, rulenode.children)])
             return res
+        if rulenode.__class__ is Set:
+            if exnode.__class__ is not Group:
+                raise TypeError("Can't extrapolate Set %r to non-group %r"%(rulenode, exnode))
+            mpoint = bindings[rulenode.name]
+            for idx, child in enumerate(rulenode.children):
+                if idx < len(mpoint) and mpoint[idx] is not None:
+                    exnode.children[mpoint[idx]] = self._eval_inner(exnode.children[idx], bindings, child)
+                else:
+                    exnode.children.append(self._eval_inner(None, bindings, child))
+            return exnode
         if rulenode.__class__ is Group:
             if exnode.__class__ is Group:
                 exchildren = exnode.children[:len(rulenode.children)]
@@ -231,7 +273,14 @@ class RuleSet(object):
     def run(self, tree):
         iters = {}
         while True:
-            newtree = self.mode(tree)
+            try:
+                newtree = self.mode(tree)
+            except Exception:
+                import traceback, sys
+                print('Error occured during processing tree:', file=sys.stderr)
+                traceback.print_exc()
+                print('Current input state:', tree, file=sys.stderr)
+                return tree, iters
             if not newtree:
                 return tree, iters
             tree = newtree[0]
