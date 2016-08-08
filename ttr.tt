@@ -37,6 +37,8 @@
 <s1>[oper['['], Disjunctor[<y>]] -> <s1>[Child[Disjunctor[<y>]]];
 <s1>[oper['['], Conjunctor[<y>]] -> <s1>[Child[Disjunctor[<y>]]];
 /* terminators */
+<s1>[Child[<a>], oper[','], oper[']']] -> <s1>[Children[Child[<a>]]];
+<s1>[Child[<a>, <b>], oper[','], oper[']']] -> <s1>[Children[Child[<a>, <b>]]];
 <s1>[Child[<a>], oper[']']] -> <s1>[Children[Child[<a>]]];
 <s1>[Child[<a>, <b>], oper[']']] -> <s1>[Children[Child[<a>, <b>]]];
 /* continuation */

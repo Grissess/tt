@@ -1,4 +1,6 @@
-System[WM[
-	Equiv[Func['f', Args['a']], 'a'],
-	Equiv[Func['g', Args['b']], 'a']
-], L['f']]
+WM[
+	Eq[Func['f', Args['a']], 'a'],
+	Eq[Func['g', Args['b']], 'a'],
+	Eq[Func['h', Args['b', 'a']], 'c'],
+	Eq[Func['j', Args['c']], 'a'],
+]

@@ -78,6 +78,29 @@ class Conjunctor(RuleEx, Group):
     def __repr__(self):
         return '&%r'%(self.children,)
 
+def _set_permute(exnode, children, bindings, match):
+    if not children:
+        yield [bindings]  # Execute exactly one iteration
+        return
+    old_bindings = bindings.copy()
+    child = children[0]
+    if child.__class__ is Negator:
+        for exidx, exchild in enumerate(exnode.children):
+            res, subbind = match(exchild, child.value, bindings)
+            if res:
+                return  # Not a viable search path
+            bindings = subbind
+        else:
+            for submatch in _set_permute(exnode, children[1:], bindings, match):
+                yield [None] + submatch
+    else:
+        for exidx, exchild in enumerate(exnode.children):
+            res, subbind = match(exchild, child, bindings)
+            if res:
+                for submatch in _set_permute(exnode, children[1:], subbind, match):
+                    yield [exidx] + submatch
+            bindings = old_bindings.copy()
+
 class Rule(object):
     action = None
     def __init__(self, lhs, rhs, action = None):
@@ -125,27 +148,15 @@ class Rule(object):
             if exnode.__class__ is not Group:
                 return False, bindings
             old_bindings = bindings.copy()
-            mpoint = []
-            for child in rulenode.children:
-                if child.__class__ is Negator:
-                    for exchild in exnode.children:
-                        res, subbind = self._match_inner(exchild, child.value, bindings)
-                        if res:
-                            return False, old_bindings
-                        bindings = subbind
-                    else:
-                        mpoint.append(None)
-                else:
-                    for exidx, exchild in enumerate(exnode.children):
-                        res, subbind = self._match_inner(exchild, child, bindings)
-                        if res:
-                            bindings = subbind
-                            mpoint.append(exidx)
-                            break
-                    else:
-                        return False, old_bindings
-            bindings[rulenode.name] = mpoint
-            return True, bindings
+            mpoint = None
+            for mpres in _set_permute(exnode, rulenode.children, bindings, self._match_inner):
+                mpoint = mpres[:-1]
+                bindings = mpres[-1]
+                break
+            if mpoint is not None:
+                bindings[rulenode.name] = mpoint
+                return True, bindings
+            return False, bindings
         if rulenode.__class__ is MatchPoint:
             if rulenode.value in bindings:
                 return self._match_inner(exnode, bindings[rulenode.value], bindings)

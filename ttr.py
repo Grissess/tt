@@ -17,6 +17,7 @@ for et, eaffin in ELEMS.items():
 for caffin in (1, 2):
     cgrp = Group('Child', *[MatchPoint('c%d'%(i,)) for i in range(caffin)])
     # Child terminators
+    CHILD_RULES.append(Rule(Sequence('s1', cgrp, Group('oper', Atom(',')), Group('oper', Atom(']'))), Sequence('s1', Group('Children', cgrp))))
     CHILD_RULES.append(Rule(Sequence('s1', cgrp, Group('oper', Atom(']'))), Sequence('s1', Group('Children', cgrp))))
 
 RULES = RuleSet(*([

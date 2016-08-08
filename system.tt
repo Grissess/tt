@@ -1,9 +1,22 @@
-(g)[{s}[
-	Equiv[Func['f', Args[<fa>]], <fa>],
-	Equiv[Func['g', Args[<ga>]], <fa>],
-	!Equiv[Func['g', Args[<ga>]], Func['f', Args[<fa>]]]
-]] -> (g)[{s}[
-	Equiv[Func['f', Args[<fa>]], <fa>],
-	Equiv[Func['g', Args[<ga>]], <fa>],
-	Equiv[Func['g', Args[<ga>]], Func['f', Args[<fa>]]]
-]];
+/* Equivalence closure relations */
+/* (Reflexivity is assumed) */
+
+/* Symmetry */
+{wm}[
+	Eq[<a>, <b>],
+	!Eq[<b>, <a>],
+] -> {wm}[
+	Eq[<a>, <b>],
+	Eq[<b>, <a>],
+];
+
+/* Transitivity */
+{wm}[
+	Eq[<a>, &[<b>, !<a>]],
+	Eq[<b>, <c>],
+	!Eq[<a>, <c>],
+] -> {wm}[
+	Eq[<a>, <b>],
+	Eq[<b>, <c>],
+	Eq[<a>, <c>],
+];
