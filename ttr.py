@@ -10,15 +10,18 @@ for et, eaffin in ELEMS.items():
     egrp = Group(et, *map(MatchPoint, map(str, range(eaffin))))
     # Child initiators
     CHILD_RULES.append(Rule(Sequence('s1', Group('oper', Atom('[')), egrp), Sequence('s1', Group('Child', egrp))))
-    for caffin in (1, 2):
+    for caffin in (0, 1, 2):
         cgrp = Group('Child', *[MatchPoint('c%d'%(i,)) for i in range(caffin)])
         # Child continuation
         CHILD_RULES.append(Rule(Sequence('s1', cgrp, Group('oper', Atom(',')), egrp), Sequence('s1', Group('Child', cgrp, egrp))))
-for caffin in (1, 2):
+for caffin in (0, 1, 2):
     cgrp = Group('Child', *[MatchPoint('c%d'%(i,)) for i in range(caffin)])
     # Child terminators
     CHILD_RULES.append(Rule(Sequence('s1', cgrp, Group('oper', Atom(',')), Group('oper', Atom(']'))), Sequence('s1', Group('Children', cgrp))))
     CHILD_RULES.append(Rule(Sequence('s1', cgrp, Group('oper', Atom(']'))), Sequence('s1', Group('Children', cgrp))))
+
+# Special case: null children
+CHILD_RULES.append(Rule(Sequence('s1', Group('oper', Atom('[')), Group('oper', Atom(']'))), Sequence('s1', Group('Children', Group('Child')))))
 
 RULES = RuleSet(*([
     # Atoms and MatchPoints

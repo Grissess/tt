@@ -1,4 +1,3 @@
-/* ttr.tt -- An implemention of TTR in TT */
 /* The bootstrap translator (and thus grammar) is in ttr.py */
 /* This is expected to operate on a ctok tree; its output is a TT tree */
 
@@ -35,13 +34,21 @@
 <s1>[oper['['], Sequence[<x>, <y>]] -> <s1>[Child[Sequence[<x>, <y>]]];
 <s1>[oper['['], Set[<x>, <y>]] -> <s1>[Child[Set[<x>, <y>]]];
 <s1>[oper['['], Disjunctor[<y>]] -> <s1>[Child[Disjunctor[<y>]]];
-<s1>[oper['['], Conjunctor[<y>]] -> <s1>[Child[Disjunctor[<y>]]];
+<s1>[oper['['], Conjunctor[<y>]] -> <s1>[Child[Conjunctor[<y>]]];
 /* terminators */
 <s1>[Child[<a>], oper[','], oper[']']] -> <s1>[Children[Child[<a>]]];
 <s1>[Child[<a>, <b>], oper[','], oper[']']] -> <s1>[Children[Child[<a>, <b>]]];
 <s1>[Child[<a>], oper[']']] -> <s1>[Children[Child[<a>]]];
 <s1>[Child[<a>, <b>], oper[']']] -> <s1>[Children[Child[<a>, <b>]]];
 /* continuation */
+<s1>[Child[], oper[','], Atom[<x>]] -> <s1>[Child[Atom[<x>]]];
+<s1>[Child[], oper[','], MatchPoint[<x>]] -> <s1>[Child[MatchPoint[<x>]]];
+<s1>[Child[], oper[','], Negator[<x>]] -> <s1>[Child[Negator[<x>]]];
+<s1>[Child[], oper[','], Group[<x>, <y>]] -> <s1>[Child[Group[<x>, <y>]]];
+<s1>[Child[], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[Sequence[<x>, <y>]]];
+<s1>[Child[], oper[','], Set[<x>, <y>]] -> <s1>[Child[Set[<x>, <y>]]];
+<s1>[Child[], oper[','], Disjunctor[<x>]] -> <s1>[Child[Disjunctor[<x>]]];
+<s1>[Child[], oper[','], Conjunctor[<x>]] -> <s1>[Child[Conjunctor[<x>]]];
 <s1>[Child[<a>], oper[','], Atom[<x>]] -> <s1>[Child[<a>, Atom[<x>]]];
 <s1>[Child[<a>], oper[','], MatchPoint[<x>]] -> <s1>[Child[<a>, MatchPoint[<x>]]];
 <s1>[Child[<a>], oper[','], Negator[<x>]] -> <s1>[Child[<a>, Negator[<x>]]];
@@ -49,7 +56,7 @@
 <s1>[Child[<a>], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[<a>, Sequence[<x>, <y>]]];
 <s1>[Child[<a>], oper[','], Set[<x>, <y>]] -> <s1>[Child[<a>, Set[<x>, <y>]]];
 <s1>[Child[<a>], oper[','], Disjunctor[<x>]] -> <s1>[Child[<a>, Disjunctor[<x>]]];
-<s1>[Child[<a>], oper[','], Conjunctor[<x>]] -> <s1>[Child[<a>, Disjunctor[<x>]]];
+<s1>[Child[<a>], oper[','], Conjunctor[<x>]] -> <s1>[Child[<a>, Conjunctor[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Atom[<x>]] -> <s1>[Child[Child[<a>, <b>], Atom[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], MatchPoint[<x>]] -> <s1>[Child[Child[<a>, <b>], MatchPoint[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Negator[<x>]] -> <s1>[Child[Child[<a>, <b>], Negator[<x>]]];
@@ -57,7 +64,9 @@
 <s1>[Child[<a>, <b>], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Sequence[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Set[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Set[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Disjunctor[<x>]] -> <s1>[Child[Child[<a>, <b>], Disjunctor[<x>]]];
-<s1>[Child[<a>, <b>], oper[','], Conjunctor[<x>]] -> <s1>[Child[Child[<a>, <b>], Disjunctor[<x>]]];
+<s1>[Child[<a>, <b>], oper[','], Conjunctor[<x>]] -> <s1>[Child[Child[<a>, <b>], Conjunctor[<x>]]];
+/* null children */
+<s1>[oper['['], oper[']']] -> <s1>[Children[Child[]]];
 
 /* Rules */
 <s1>[Atom[<x>], oper['-'], oper['>'], Atom[<a>]] -> <s1>[Rule[Atom[<x>], Atom[<a>]]];

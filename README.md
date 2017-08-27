@@ -116,6 +116,31 @@ To execute TTR on a tree, use the `ttexec.py` helper, which:
 3. Executes the syntax file's RuleSet over the stdin ordinary tree.
 4. Writes the resulting tree to stdout (in TTR format).
 
+### TT LISP
+
+A small proof-of-concept of an evaluator is included in `ttl.py`, which reads
+in TTR from stdin, and emits TTR from stdout. The incoming tree can be a
+pattern tree without loss of generality, but TTL rewrites groups, which makes
+usage in Rules and RuleSets dubious.
+
+The core is the `ttl.Executor`, which rewrites a tree via its `eval` method.
+When encountering a Group, its name is checked; if it begins with a prefix (as
+set by the `prefix` attribute, default `_`) and the name is an attribute of the
+form `eval_name` on the `Executor`, that method is called to rewrite that
+Group, returning an Expression (usually either a Group or Atom).
+
+Error checking is done within `eval`; if an error occurs, an `ERROR` group is
+rewritten instead; its sole child is a Group whose name is the (non-qualified)
+name of the Python Exception class, and whose children are Atoms consisting of
+the string form of the Exception's arguments (`args`). Extenders of TTL may
+take advantage of this to provide debugging information via these arguments. A
+traceback is not yet included, in part for brevity.
+
+This module is highly expected to mutate substantially, and so its intrinsics
+aren't yet documented. Refer to `ttl.py` in the source distribution to observe
+the currently-supported TTL functions. Suggestions for useful functions are
+welcome via issues against this project.
+
 ## Theory
 
 TT was designed to be a small language that is simultaneously:
