@@ -32,29 +32,79 @@ so are as follows:
   responible for *running* Rules on a tree--that is, matching every Rule until
   quiescence.
 
-Some of the `RuleEx` derivatives have special ("binding") behavior when
-evaluated as part of a pattern tree against some subtree of the input tree:
+Some of the `RuleEx` derivatives have special behavior when evaluated as part
+of a pattern tree against some subtree of the input tree:
 
-* When matching, a MatchPoint uniquely identified by its (Atomic) value will
-  receive (*bind*) the first node it matches, and match unconditionally.
-  Subsequent occurrences of the same MatchPoint (by value) will only match if
-  the node it is to match is considered equivalent to its first binding. A
-  Sequence is located where a Group would be in an input tree, and matches some
-  consecutive subsequence of that Group, binding the location and length of the
-  match. Interactions between matching Sequences of the same name is
-  ill-defined at the moment.
-* When rewriting, a MatchPoint will evaluate to whatever value it was bound to.
-  A Sequence will *splice* its children into the match of the original
-  Sequence--that is, the bound location and length of the sequence will be
-  replaced with the content of the rewriting sequence, which need not be the
-  same length. Sequences may be rewritten to a Group other than the one
-  matched, which causes the splice to occur in the same location in that Group
-  as it would in the matched Group.
+* MatchPoints, as identified unqiuely by their (Atomic) value, will:
+	* On matching: on their first encounter, match unconditionally and *bind*
+	  the value they were matched against. Subsequently, they will only match
+	  if the value they are matched against is considered equivalent to their
+	  initial binding.
+	* On rewrite: Writes the value bound--but see AppendChildren below.
+* Sequences, as identified by their (Group) name, will:
+	* On matching: succeeding only against a Group, will match some consecutive
+	  subsequence of that Group's children, binding the location and length of
+	  the match.
+	* On rewriting: *splices* its children into the Group it is rewritten
+	  against, such that the matched subsequence is replaced by the Sequence's
+	  children. The rewritten children need not be the same length (the
+	  rewritten Group's children will lengthen or shorten accordingly), nor
+	  does the rewritten Group need to be the same as the matched Group--the
+	  splice occurs in the rewritten Group in the same location and with the
+	  same length as it would in the matched Group.
+* Sets, as identified by their name, will:
+	* On matching: attempt to match each of its children with some element of
+	  the Group it is matching against. The algorithm is, at worst,
+	  O(permutations(n, m)), where n is the number of children of the Group and
+	  m is the number of children of the Set, but the Set's children are tested
+	  from left to right, so some paths may be culled early. It is recommended
+	  to, if possible, move stricter criteria to the left. On its first
+	  success, the Set binds a mapping (a Python dict) of children indices to
+	  the corresponding indices of the matched Group where each Set child
+	  matched.
+	* On rewriting: The first m children (where m is the number of children of
+	  the matching Set that created the binding) are rewritten against the
+	  children of the rewritten Group in the same location as the corresponding
+	  match. If the rewriting Set has less than m children, the remaining match
+	  indices in the rewritten Group are removed. If the rewriting Set has more
+	  than m children, the additional children are appended (rewritten against
+	  nothing). Like Sequences, the rewritten Group need not be the matched
+	  Group; the match indices are applied to the rewritten Group exactly as
+	  they were recorded from the matched Group.
+* Negators, allowed only in matches, invert the sense of their solitary child
+  (technically an Atom value), but otherwise preserve all the side effects of
+  that child's match (such as bindings).
+* Conjunctors, allowed only in matches, match their children from left to
+  right; as each child succeeds, its bindings are available to the next
+  children. If a child fails, the match fails, and all new bindings are
+  dropped, Otherwise (if all succeed), the new bindings are globally available.
+* Disjunctors, allowed only in matches, match their children from left to
+  right. Should a child match, the match succeeds, and the bindings from that
+  match are globally available. Should no child match, the Disjunctor fails to
+  match.
+* NameMatch, allowed only in matches, succeeds only if it is matched against a
+  Group whose name is equal to its Atomic value. Commonly conjuncted with a
+  MatchPoint, a special TTR syntax exists for this purpose.
+* AppendChildren, allowed only in rewrites, appends its second and subsequent
+  children to its first child; if the first child is a Group, that Group's
+  children are concatenated, in order, with the subsequent AppendChild's
+  children. If the first child is an Atom, it is silently converted to an empty
+  Group of the same name as the Atom's value. The subsequent children are
+  rewritten *against nothing*, which proscribes the use of Sequences or Sets.
+  As a direct subsequent child (not an ancestor nested one or more Groups
+  deep), a MatchPoint is treated specially here: if it is bound against a
+  Group, that Group's children are *concatenated* into the children (and the
+  bound Group's name ignored). This is useful for renaming groups with
+  arbitrary children--though the self-hosting TTR grammar, being older, does
+  not yet take advantage of this.
 
 The exact behavior is determined by placement in a Rule: the left-hand side
 (first parameter) of a Rule is matched; its right-hand side (second parameter)
-is rewritten using the bindings generated by the match. Currently, logical
-operators do not have well-formed replacements when rewriting.
+is rewritten using the bindings generated by the match. When rewriting Groups,
+if rewritten against a Group, the children of the rewriting Group are rewritten
+against the children of the rewritten Group in exactly the same order. If
+the rewriting Group has more children than the rewritten Group, the excess
+children are rewritten against nothing.
 
 ### TTR syntax
 

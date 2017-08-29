@@ -4,7 +4,7 @@ from rws import *
 
 # Rule.action = lambda self, rule, match, bind, res: print('Fired', rule, 'matching', match, 'bindings', bind, 'resulting in', res)
 
-ELEMS = {'Atom': 1, 'MatchPoint': 1, 'Negator': 1, 'Disjunctor': 1, 'Conjunctor': 1, 'Group': 2, 'Sequence': 2, 'Set': 2}
+ELEMS = {'Atom': 1, 'MatchPoint': 1, 'NameMatch': 1, 'Negator': 1, 'Disjunctor': 1, 'Conjunctor': 1, 'AppendChildren': 1, 'Group': 2, 'Sequence': 2, 'Set': 2}
 CHILD_RULES = []
 for et, eaffin in ELEMS.items():
     egrp = Group(et, *map(MatchPoint, map(str, range(eaffin))))
@@ -28,6 +28,11 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('string', MatchPoint('X'))), Sequence('s1', Group('Atom', MatchPoint('X')))),
     Rule(Sequence('s1', Group('oper', Atom('<')), Group('ident', MatchPoint('X')), Group('oper', Atom('>'))), Sequence('s1', Group('MatchPoint', MatchPoint('X')))),
     Rule(Sequence('s1', Group('oper', Atom('<')), Group('oper', Atom('>'))), Sequence('s1', Group('MatchPoint', Atom('')))),
+    # NameMatches
+    Rule(Sequence('s1', Group('oper', Atom('@')), Group('Atom', MatchPoint('X'))), Sequence('s1', Group('NameMatch', MatchPoint('X')))),
+    Rule(Sequence('s1', Group('oper', Atom('@')), Group('ident', MatchPoint('X'))), Sequence('s1', Group('NameMatch', MatchPoint('X')))),
+    # MatchPoint / NameMatch sugar
+    Rule(Sequence('s1', Group('oper', Atom('<')), Group('ident', MatchPoint('X')), Group('oper', Atom(':')), Group('ident', MatchPoint('Y')), Group('oper', Atom('>'))), Sequence('s1', Group('Conjunctor', Group('Children', Group('Child', Group('MatchPoint', MatchPoint('X')), Group('NameMatch', MatchPoint('Y'))))))),
     # Groups and Sequences
     Rule(Sequence('s1', Group('Atom', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('ident', MatchPoint('X')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('Group', MatchPoint('X'), Group('Children', MatchPoint('Y'))))),
@@ -44,6 +49,10 @@ RULES = RuleSet(*([
     Rule(Sequence('s1', Group('oper', Atom('!')), Group('Sequence', MatchPoint('X'), MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Sequence', MatchPoint('X'), MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('oper', Atom('!')), Group('Disjunctor', MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Disjunctor', MatchPoint('Y'))))),
     Rule(Sequence('s1', Group('oper', Atom('!')), Group('Conjunctor', MatchPoint('Y'))), Sequence('s1', Group('Negator', Group('Conjunctor', MatchPoint('Y'))))),
+    # AppendChildren
+    Rule(Sequence('s1', Group('Group', MatchPoint('X'), MatchPoint('Y')), Group('oper', Atom('$')), Group('Children', MatchPoint('Z'))), Sequence('s1', Group('AppendChildren', Group('Children', Group('Child', Group('Group', MatchPoint('X'), MatchPoint('Y')), MatchPoint('Z')))))),
+    Rule(Sequence('s1', Group('Atom', MatchPoint('X')), Group('oper', Atom('$')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('AppendChildren', Group('Children', Group('Child', Group('Atom', MatchPoint('X')), MatchPoint('Y')))))),
+    Rule(Sequence('s1', Group('ident', MatchPoint('X')), Group('oper', Atom('$')), Group('Children', MatchPoint('Y'))), Sequence('s1', Group('AppendChildren', Group('Children', Group('Child', Group('Atom', MatchPoint('X')), MatchPoint('Y')))))),
     # Children
 ] + CHILD_RULES + [
     # Rules
@@ -105,6 +114,9 @@ class Translator(object):
     def tg_MatchPoint(self, obj):
         return MatchPoint(self.translate(obj.children[0]))
 
+    def tg_NameMatch(self, obj):
+        return NameMatch(self.translate(obj.children[0]))
+
     def tg_Negator(self, obj):
         return Negator(self.translate(obj.children[0]))
 
@@ -122,6 +134,9 @@ class Translator(object):
 
     def tg_Conjunctor(self, obj):
         return Conjunctor(None, *self.translate(obj.children[0]))
+
+    def tg_AppendChildren(self, obj):
+        return AppendChildren(None, *self.translate(obj.children[0]))
 
 if __name__ == '__main__':
     import ctok, sys, pickle

@@ -6,6 +6,13 @@
 <s1>[oper['<'], ident[<x>], oper['>']] -> <s1>[MatchPoint[<x>]];
 <s1>[oper['<'], oper['>']] -> <s1>[MatchPoint['']];
 
+/* NameMatches */
+<s1>[oper['@'], Atom[<x>]] -> <s1>[NameMatch[<x>]];
+<s1>[oper['@'], ident[<x>]] -> <s1>[NameMatch[<x>]];
+
+/* MatchPoint/NameMatch sugar */
+<s1>[oper['<'], ident[<x>], oper[':'], ident[<y>], oper['>']] -> <s1>[Conjunctor[Children[Child[MatchPoint[<x>], NameMatch[<y>]]]]];
+
 /* Groups and Sequences */
 <s1>[Atom[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
 <s1>[ident[<x>], Children[<y>]] -> <s1>[Group[<x>, Children[<y>]]];
@@ -13,7 +20,7 @@
 <s1>[oper['('], ident[<x>], oper[')'], Children[<y>]] -> <s1>[Sequence[<x>, Children[<y>]]];
 <s1>[oper['{'], ident[<x>], oper['}'], Children[<y>]] -> <s1>[Set[<x>, Children[<y>]]];
 
-/* Disjunctors and Conjunctors*/
+/* Disjunctors and Conjunctors */
 <s1>[oper['|'], Children[<x>]] -> <s1>[Disjunctor[Children[<x>]]];
 <s1>[oper['&'], Children[<x>]] -> <s1>[Conjunctor[Children[<x>]]];
 
@@ -25,16 +32,23 @@
 <s1>[oper['!'], Disjunctor[<y>]] -> <s1>[Negation[Disjunctor[<y>]]];
 <s1>[oper['!'], Conjunctor[<y>]] -> <s1>[Negation[Conjunctor[<y>]]];
 
+/* AppendChildren */
+<s1>[Group[<x>, <y>], oper['$'], Children[<z>]] -> <s1>[AppendChildren[Children[Child[Group[<x>, <y>], <z>]]]];
+<s1>[Atom[<x>], oper['$'], Children[<y>]] -> <s1>[AppendChildren[Children[Child[Atom[<x>], <y>]]]];
+<s1>[ident<x>, oper['$'], Children[<y>]] -> <s1>[AppendChildren[Children[Child[Atom[<x>], <y>]]]];
+
 /* Children (exhaustively) */
 /* initiators */
 <s1>[oper['['], Atom[<x>]] -> <s1>[Child[Atom[<x>]]];
 <s1>[oper['['], MatchPoint[<x>]] -> <s1>[Child[MatchPoint[<x>]]];
+<s1>[oper['['], NameMatch[<x>]] -> <s1>[Child[NameMatch[<x>]]];
 <s1>[oper['['], Negator[<x>]] -> <s1>[Child[Negator[<x>]]];
 <s1>[oper['['], Group[<x>, <y>]] -> <s1>[Child[Group[<x>, <y>]]];
 <s1>[oper['['], Sequence[<x>, <y>]] -> <s1>[Child[Sequence[<x>, <y>]]];
 <s1>[oper['['], Set[<x>, <y>]] -> <s1>[Child[Set[<x>, <y>]]];
 <s1>[oper['['], Disjunctor[<y>]] -> <s1>[Child[Disjunctor[<y>]]];
 <s1>[oper['['], Conjunctor[<y>]] -> <s1>[Child[Conjunctor[<y>]]];
+<s1>[oper['['], AppendChildren[<y>]] -> <s1>[Child[AppendChildren[<y>]]];
 /* terminators */
 <s1>[Child[<a>], oper[','], oper[']']] -> <s1>[Children[Child[<a>]]];
 <s1>[Child[<a>, <b>], oper[','], oper[']']] -> <s1>[Children[Child[<a>, <b>]]];
@@ -43,28 +57,34 @@
 /* continuation */
 <s1>[Child[], oper[','], Atom[<x>]] -> <s1>[Child[Atom[<x>]]];
 <s1>[Child[], oper[','], MatchPoint[<x>]] -> <s1>[Child[MatchPoint[<x>]]];
+<s1>[Child[], oper[','], NameMatch[<x>]] -> <s1>[Child[NameMatch[<x>]]];
 <s1>[Child[], oper[','], Negator[<x>]] -> <s1>[Child[Negator[<x>]]];
 <s1>[Child[], oper[','], Group[<x>, <y>]] -> <s1>[Child[Group[<x>, <y>]]];
 <s1>[Child[], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[Sequence[<x>, <y>]]];
 <s1>[Child[], oper[','], Set[<x>, <y>]] -> <s1>[Child[Set[<x>, <y>]]];
 <s1>[Child[], oper[','], Disjunctor[<x>]] -> <s1>[Child[Disjunctor[<x>]]];
 <s1>[Child[], oper[','], Conjunctor[<x>]] -> <s1>[Child[Conjunctor[<x>]]];
+<s1>[Child[], oper[','], AppendChildren[<x>]] -> <s1>[Child[AppendChildren[<x>]]];
 <s1>[Child[<a>], oper[','], Atom[<x>]] -> <s1>[Child[<a>, Atom[<x>]]];
 <s1>[Child[<a>], oper[','], MatchPoint[<x>]] -> <s1>[Child[<a>, MatchPoint[<x>]]];
+<s1>[Child[<a>], oper[','], NameMatch[<x>]] -> <s1>[Child[<a>, NameMatch[<x>]]];
 <s1>[Child[<a>], oper[','], Negator[<x>]] -> <s1>[Child[<a>, Negator[<x>]]];
 <s1>[Child[<a>], oper[','], Group[<x>, <y>]] -> <s1>[Child[<a>, Group[<x>, <y>]]];
 <s1>[Child[<a>], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[<a>, Sequence[<x>, <y>]]];
 <s1>[Child[<a>], oper[','], Set[<x>, <y>]] -> <s1>[Child[<a>, Set[<x>, <y>]]];
 <s1>[Child[<a>], oper[','], Disjunctor[<x>]] -> <s1>[Child[<a>, Disjunctor[<x>]]];
 <s1>[Child[<a>], oper[','], Conjunctor[<x>]] -> <s1>[Child[<a>, Conjunctor[<x>]]];
+<s1>[Child[<a>], oper[','], AppendChildren[<x>]] -> <s1>[Child[<a>, AppendChildren[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Atom[<x>]] -> <s1>[Child[Child[<a>, <b>], Atom[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], MatchPoint[<x>]] -> <s1>[Child[Child[<a>, <b>], MatchPoint[<x>]]];
+<s1>[Child[<a>, <b>], oper[','], NameMatch[<x>]] -> <s1>[Child[Child[<a>, <b>], NameMatch[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Negator[<x>]] -> <s1>[Child[Child[<a>, <b>], Negator[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Group[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Group[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Sequence[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Sequence[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Set[<x>, <y>]] -> <s1>[Child[Child[<a>, <b>], Set[<x>, <y>]]];
 <s1>[Child[<a>, <b>], oper[','], Disjunctor[<x>]] -> <s1>[Child[Child[<a>, <b>], Disjunctor[<x>]]];
 <s1>[Child[<a>, <b>], oper[','], Conjunctor[<x>]] -> <s1>[Child[Child[<a>, <b>], Conjunctor[<x>]]];
+<s1>[Child[<a>, <b>], oper[','], AppendChildren[<x>]] -> <s1>[Child[Child[<a>, <b>], AppendChildren[<x>]]];
 /* null children */
 <s1>[oper['['], oper[']']] -> <s1>[Children[Child[]]];
 

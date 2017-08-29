@@ -66,6 +66,10 @@ class MatchPoint(RuleEx, Atom):
     def __repr__(self):
         return '<%s>'%(self.value,)
 
+class NameMatch(RuleEx, Atom):
+    def __repr__(self):
+        return '@%s'%(self.value,)
+
 class Negator(RuleEx, Atom):
     def __repr__(self):
         return '!%r'%(self.value,)
@@ -77,6 +81,10 @@ class Disjunctor(RuleEx, Group):
 class Conjunctor(RuleEx, Group):
     def __repr__(self):
         return '&%r'%(self.children,)
+
+class AppendChildren(RuleEx, Group):
+    def __repr__(self):
+        return '%r$%r'%(self.children[0], self.children[1:])
 
 def _set_permute(exnode, children, bindings, match):
     if not children:
@@ -162,6 +170,10 @@ class Rule(object):
                 return self._match_inner(exnode, bindings[rulenode.value], bindings)
             bindings[rulenode.value] = exnode
             return True, bindings
+        if rulenode.__class__ is NameMatch:
+            if exnode.__class__ is not Group:
+                return False, bindings
+            return exnode.name == rulenode.value, bindings
         if rulenode.__class__ is Negator:
             res, subbind = self._match_inner(exnode, rulenode.value, bindings)
             return not res, bindings
@@ -208,6 +220,12 @@ class Rule(object):
                     exnode.children[mpoint[idx]] = self._eval_inner(exnode.children[idx], bindings, child)
                 else:
                     exnode.children.append(self._eval_inner(None, bindings, child))
+            torem = set()
+            for idx in mpoint:
+                if idx >= len(rulenode.children):
+                    torem.add(mpoint[idx])
+            for remidx in sorted(torem, reverse=True):
+                del exnode[remidx]
             return exnode
         if rulenode.__class__ is Group:
             if exnode.__class__ is Group:
@@ -216,6 +234,22 @@ class Rule(object):
                 exchildren = []
             exchildren.extend([None] * (len(rulenode.children) - len(exchildren)))
             return Group(rulenode.name, *flatten([self._eval_inner(exchild, bindings, child) for exchild, child in zip(exchildren, rulenode.children)]))
+        if rulenode.__class__ is AppendChildren:
+            if rulenode.children[0].__class__ is Group:
+                exname = rulenode.children[0].name
+                exchildren = rulenode.children[0].children
+            elif rulenode.children[0].__class__ is Atom:
+                exname = rulenode.children[0].value
+                exchildren = []
+            else:
+                raise TypeError("Can't append children %r to %r"%(rulenode, rulenode.children[0]))
+            for child in rulenode.children[1:]:
+                if child.__class__ is MatchPoint:
+                    if bindings[child.value].__class__ is Group:
+                        exchildren.extend(bindings[child.value].children)
+                        continue
+                exchildren.append(self._eval_inner(None, bindings, child))
+            return Group(exname, *exchildren)
         return rulenode
 
     def execute(self, tree):

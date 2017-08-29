@@ -1,4 +1,4 @@
 /* Test inputs go here */
 /* Remember NOT to use -> or ; ! */
 
-Outer['1', '2', Group['a', 'b', 'c', 'd']]
+Outer['1', '2', Group['a', 'b', 'c', 'd'], Foo['a', 'b'], Foo['1', '2']]
